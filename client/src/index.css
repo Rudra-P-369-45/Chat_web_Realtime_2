@@ -11,3 +11,40 @@
     @apply font-sans antialiased bg-background text-foreground;
   }
 }
+
+@keyframes float {
+  0% {
+    transform: translateY(0px) translateX(0px);
+  }
+  25% {
+    transform: translateY(-10px) translateX(10px);
+  }
+  50% {
+    transform: translateY(0px) translateX(20px);
+  }
+  75% {
+    transform: translateY(10px) translateX(10px);
+  }
+  100% {
+    transform: translateY(0px) translateX(0px);
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 0.2;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.3;
+    transform: scale(1.05);
+  }
+}
+
+.float-animation {
+  animation: float 12s ease-in-out infinite;
+}
+
+.pulse-glow-animation {
+  animation: pulse-glow 6s ease-in-out infinite;
+}
