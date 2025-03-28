@@ -100,10 +100,9 @@ export default function Login() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter password (hint: 456)"
+                placeholder="Enter password"
                 className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-white/50 backdrop-blur-sm border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 transition-all duration-200 text-sm sm:text-base"
               />
-              <p className="text-xs text-gray-500 mt-1">Default password is: 456</p>
             </div>
             
             {error && (
