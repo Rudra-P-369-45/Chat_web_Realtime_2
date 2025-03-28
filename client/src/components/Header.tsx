@@ -32,7 +32,7 @@ export default function Header() {
   return (
     <header className="bg-primary text-white shadow px-4 py-3 flex justify-between items-center">
       <div className="flex items-center space-x-3">
-        <h1 className="text-xl font-semibold">RealChat</h1>
+        <h1 className="text-xl font-semibold">Rudra Chats</h1>
         <div className="bg-green-400 rounded-full h-2.5 w-2.5"></div>
         <span className="text-sm font-medium">{onlineCount} online</span>
       </div>

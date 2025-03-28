@@ -76,7 +76,7 @@ export default function Login() {
       <Card className="relative bg-white/90 backdrop-blur-sm p-8 rounded-xl shadow-2xl max-w-md w-full border border-white/20">
         <CardContent className="p-0">
           <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">RealChat</h1>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Rudra Chats</h1>
             <p className="text-gray-600 mt-2">Connect with friends in real-time</p>
           </div>
           
