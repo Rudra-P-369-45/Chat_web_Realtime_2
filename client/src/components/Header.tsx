@@ -2,10 +2,11 @@ import { useState, useEffect } from "react";
 import { useChat } from "../context/ChatContext";
 import { Button } from "@/components/ui/button";
 import { chatSocket } from "../lib/socket";
+import { Trash2 } from "lucide-react";
 
 export default function Header() {
   const [username, setUsername] = useState("");
-  const { users } = useChat();
+  const { users, clearMessages } = useChat();
   
   const onlineCount = users.filter(u => u.isOnline).length;
 
@@ -35,11 +36,21 @@ export default function Header() {
         <div className="bg-green-400 rounded-full h-2.5 w-2.5"></div>
         <span className="text-sm font-medium">{onlineCount} online</span>
       </div>
-      <div className="flex items-center space-x-4">
+      <div className="flex items-center space-x-3">
         <span className="text-sm font-medium">{username}</span>
+        <Button 
+          onClick={clearMessages}
+          variant="outline"
+          size="sm"
+          className="bg-white bg-opacity-20 hover:bg-opacity-30 border-none text-white"
+        >
+          <Trash2 className="h-4 w-4 mr-1" />
+          Clear Chat
+        </Button>
         <Button 
           onClick={handleLogout}
           variant="outline"
+          size="sm"
           className="bg-white bg-opacity-20 hover:bg-opacity-30 border-none text-white"
         >
           Logout

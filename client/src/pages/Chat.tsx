@@ -98,20 +98,11 @@ export default function Chat() {
         
         {/* Chat area */}
         <div className="flex-1 flex flex-col bg-gray-50">
-          {/* Messages container with clear button */}
-          <div className="flex items-center justify-between p-2 border-b border-gray-200 bg-white">
+          {/* Messages container with count */}
+          <div className="flex items-center p-2 border-b border-gray-200 bg-white">
             <div className="text-sm text-gray-500">
               {messages.length > 0 ? `${messages.length} messages` : 'No messages'}
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-red-500 hover:text-red-700 hover:bg-red-50 border-red-200"
-              onClick={clearMessages}
-            >
-              <Trash2 className="h-4 w-4 mr-1" />
-              Clear Chat
-            </Button>
           </div>
           <ScrollArea className="flex-1 p-4" type="always">
             <div className="flex flex-col space-y-4">
