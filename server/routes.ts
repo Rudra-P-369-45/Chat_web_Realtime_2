@@ -52,7 +52,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         switch (chatEvent.type) {
           case 'userJoined':
-            username = chatEvent.payload.username;
+            username = chatEvent.payload.username || "";
             console.log(`User joined: ${username}`);
             
             if (!username) {
@@ -102,7 +102,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             await storage.saveMessage({
               content: `${username} has joined the chat`,
               sender: "System",
-              timestamp: new Date(),
+              timestamp: new Date().toISOString(),
               fileUrl: null,
               fileName: null,
               fileSize: null,
@@ -124,7 +124,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const messageData = {
               content: chatEvent.payload.content,
               sender: username,
-              timestamp: new Date(),
+              timestamp: new Date().toISOString(),
               fileUrl: null,
               fileName: null,
               fileSize: null,
@@ -170,7 +170,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await storage.saveMessage({
           content: `${username} has left the chat`,
           sender: "System",
-          timestamp: new Date(),
+          timestamp: new Date().toISOString(),
           fileUrl: null,
           fileName: null,
           fileSize: null,
@@ -232,7 +232,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const fileMessage = {
         content: `Shared a file: ${fileName}`,
         sender: username as string,
-        timestamp: new Date(),
+        timestamp: new Date().toISOString(),
         fileUrl,
         fileName,
         fileSize,

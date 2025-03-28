@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { useAuth } from "../context/AuthContext";
+import { chatSocket } from "../lib/socket";
 import { 
   Card, 
   CardContent 
@@ -14,7 +14,6 @@ export default function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const { login } = useAuth();
   const [_, setLocation] = useLocation();
   const { toast } = useToast();
 
@@ -31,12 +30,20 @@ export default function Login() {
       return;
     }
     
-    login(username);
+    // Create user object and store in localStorage
+    const user = { username };
+    localStorage.setItem("chatUser", JSON.stringify(user));
+    
+    // Connect to WebSocket
+    chatSocket.connect(username);
+    
     toast({
       title: "Login successful",
       description: `Welcome ${username}!`,
     });
-    setLocation("/");
+    
+    // Redirect to chat page
+    window.location.href = "/";
   };
 
   return (

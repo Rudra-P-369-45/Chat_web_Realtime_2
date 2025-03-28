@@ -1,6 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { chatSocket } from "../lib/socket";
-import { useAuth } from "./AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
 export interface Message {
@@ -38,18 +37,30 @@ const formatFileSize = (bytes: number) => {
 export function ChatProvider({ children }: { children: ReactNode }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [users, setUsers] = useState<User[]>([]);
-  const { user } = useAuth();
+  const [currentUser, setCurrentUser] = useState<{ username: string } | null>(null);
   const { toast } = useToast();
+
+  // Check localStorage for user on mount
+  useEffect(() => {
+    const storedUser = localStorage.getItem("chatUser");
+    if (storedUser) {
+      const parsedUser = JSON.parse(storedUser);
+      setCurrentUser(parsedUser);
+      
+      // Connect socket with saved username
+      chatSocket.connect(parsedUser.username);
+    }
+  }, []);
 
   // Register message handler
   useEffect(() => {
-    if (!user) return;
+    if (!currentUser) return;
     
     const removeMessageHandler = chatSocket.onMessage((message: Message) => {
       setMessages(prevMessages => [...prevMessages, message]);
       
       // Show toast for new messages from others
-      if (message.sender !== user.username) {
+      if (message.sender !== currentUser.username) {
         toast({
           title: `New message from ${message.sender}`,
           description: message.content.substring(0, 30) + (message.content.length > 30 ? '...' : ''),
@@ -65,14 +76,15 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       removeMessageHandler();
       removeUsersHandler();
     };
-  }, [user, toast]);
+  }, [currentUser, toast]);
 
   const sendMessage = (content: string) => {
-    if (!content.trim()) return;
+    if (!content.trim() || !currentUser) return;
     chatSocket.sendMessage(content);
   };
 
   const sendFileMessage = async (file: File) => {
+    if (!currentUser) return;
     try {
       await chatSocket.sendFile(file);
       

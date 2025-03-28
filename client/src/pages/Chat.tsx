@@ -6,18 +6,24 @@ import FileUploadPreview from "../components/FileUploadPreview";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
 import { Send, Paperclip } from "lucide-react";
 import { useChat } from "../context/ChatContext";
-import { useAuth } from "../context/AuthContext";
 
 export default function Chat() {
   const [message, setMessage] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [currentUser, setCurrentUser] = useState<{username: string} | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { messages, users, sendMessage, sendFileMessage } = useChat();
-  const { user } = useAuth();
+
+  // Get current user from localStorage
+  useEffect(() => {
+    const storedUser = localStorage.getItem("chatUser");
+    if (storedUser) {
+      setCurrentUser(JSON.parse(storedUser));
+    }
+  }, []);
 
   // Resize textarea as user types
   const handleMessageChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -61,6 +67,12 @@ export default function Chat() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // Handle logout
+  const handleLogout = () => {
+    localStorage.removeItem("chatUser");
+    window.location.href = "/login";
+  };
+
   return (
     <div className="h-screen flex flex-col bg-light">
       <Header />
@@ -98,7 +110,7 @@ export default function Chat() {
                 <MessageItem
                   key={index}
                   message={msg}
-                  isMine={msg.sender === user?.username}
+                  isMine={msg.sender === currentUser?.username}
                 />
               ))}
               <div ref={messagesEndRef} />

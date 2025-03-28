@@ -48,12 +48,13 @@ export class MemStorage implements IStorage {
 
     // Create new user
     const id = this.userIdCounter++;
+    const now = new Date();
     const user: User = { 
       id, 
       username, 
       status: UserStatus.ONLINE,
       isOnline: true,
-      createdAt: new Date().toISOString()
+      createdAt: now
     };
     
     this.users.set(id, user);
@@ -98,10 +99,22 @@ export class MemStorage implements IStorage {
 
   async saveMessage(messageData: InsertMessage): Promise<Message> {
     const id = this.messageIdCounter++;
+    
+    // Ensure timestamp is a string
+    let timestamp = typeof messageData.timestamp === 'string' 
+      ? messageData.timestamp 
+      : new Date().toISOString();
+    
     const message: Message = { 
       id, 
-      ...messageData,
-      createdAt: new Date().toISOString()
+      content: messageData.content,
+      sender: messageData.sender,
+      timestamp,
+      fileUrl: messageData.fileUrl || null,
+      fileName: messageData.fileName || null,
+      fileSize: messageData.fileSize || null,
+      fileType: messageData.fileType || null,
+      createdAt: new Date()
     };
     
     this.messages.set(id, message);
@@ -111,15 +124,22 @@ export class MemStorage implements IStorage {
 
   // This is used by the websocket handler to store messages
   async storeMessage(messageData: any): Promise<Message> {
+    // Convert any Date-like objects to ISO strings
+    if (messageData.timestamp && typeof messageData.timestamp === 'object') {
+      messageData.timestamp = new Date(messageData.timestamp).toISOString();
+    } else if (!messageData.timestamp) {
+      messageData.timestamp = new Date().toISOString();
+    }
+    
     return this.saveMessage(messageData);
   }
 
   async getRecentMessages(limit: number): Promise<Message[]> {
     const allMessages = Array.from(this.messages.values());
     
-    // Sort by createdAt
+    // Sort by timestamp
     allMessages.sort((a, b) => {
-      return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      return new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime();
     });
     
     // Get the most recent messages
