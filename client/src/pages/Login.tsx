@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { chatSocket } from "../lib/socket";
 import { 
@@ -34,16 +34,18 @@ export default function Login() {
     const user = { username };
     localStorage.setItem("chatUser", JSON.stringify(user));
     
-    // Connect to WebSocket
-    chatSocket.connect(username);
-    
+    // Show toast notification
     toast({
       title: "Login successful",
       description: `Welcome ${username}!`,
     });
     
-    // Redirect to chat page
-    window.location.href = "/";
+    // Redirect to chat page using wouter's navigation
+    // This will trigger App's useEffect that checks localStorage
+    setLocation("/");
+    
+    // Force a refresh of the page to ensure all state is updated
+    window.location.reload();
   };
 
   return (

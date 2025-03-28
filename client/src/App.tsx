@@ -3,6 +3,7 @@ import NotFound from "@/pages/not-found";
 import Login from "@/pages/Login";
 import Chat from "@/pages/Chat";
 import { useState, useEffect } from "react";
+import { ChatProvider } from "./context/ChatContext";
 
 function App() {
   const [location, setLocation] = useLocation();
@@ -22,7 +23,13 @@ function App() {
         {isAuthenticated ? <Redirect to="/" /> : <Login />}
       </Route>
       <Route path="/">
-        {isAuthenticated ? <Chat /> : <Redirect to="/login" />}
+        {isAuthenticated ? (
+          <ChatProvider>
+            <Chat />
+          </ChatProvider>
+        ) : (
+          <Redirect to="/login" />
+        )}
       </Route>
       <Route component={NotFound} />
     </Switch>

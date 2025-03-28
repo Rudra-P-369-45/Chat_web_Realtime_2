@@ -13,7 +13,7 @@ export interface Message {
 }
 
 export interface User {
-  id: string;
+  id: string | number;
   username: string;
   isOnline: boolean;
 }
@@ -37,30 +37,29 @@ const formatFileSize = (bytes: number) => {
 export function ChatProvider({ children }: { children: ReactNode }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [users, setUsers] = useState<User[]>([]);
-  const [currentUser, setCurrentUser] = useState<{ username: string } | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
   const { toast } = useToast();
 
-  // Check localStorage for user on mount
+  // Initialize chat connection
   useEffect(() => {
+    // Get current user from localStorage
     const storedUser = localStorage.getItem("chatUser");
-    if (storedUser) {
-      const parsedUser = JSON.parse(storedUser);
-      setCurrentUser(parsedUser);
-      
-      // Connect socket with saved username
-      chatSocket.connect(parsedUser.username);
-    }
-  }, []);
-
-  // Register message handler
-  useEffect(() => {
-    if (!currentUser) return;
+    if (!storedUser) return;
     
+    const parsedUser = JSON.parse(storedUser);
+    
+    // Connect socket with saved username
+    console.log("Connecting to chat as:", parsedUser.username);
+    chatSocket.connect(parsedUser.username);
+    setIsConnected(true);
+    
+    // Register message handlers
     const removeMessageHandler = chatSocket.onMessage((message: Message) => {
+      console.log("Received message:", message);
       setMessages(prevMessages => [...prevMessages, message]);
       
       // Show toast for new messages from others
-      if (message.sender !== currentUser.username) {
+      if (message.sender !== parsedUser.username) {
         toast({
           title: `New message from ${message.sender}`,
           description: message.content.substring(0, 30) + (message.content.length > 30 ? '...' : ''),
@@ -69,26 +68,36 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     });
     
     const removeUsersHandler = chatSocket.onUsersUpdate((updatedUsers: User[]) => {
+      console.log("Users updated:", updatedUsers);
       setUsers(updatedUsers);
     });
     
+    // Cleanup on unmount
     return () => {
       removeMessageHandler();
       removeUsersHandler();
+      chatSocket.disconnect();
+      setIsConnected(false);
     };
-  }, [currentUser, toast]);
+  }, [toast]);
 
   const sendMessage = (content: string) => {
-    if (!content.trim() || !currentUser) return;
+    if (!content.trim()) return;
+    
+    const storedUser = localStorage.getItem("chatUser");
+    if (!storedUser) return;
+    
     chatSocket.sendMessage(content);
   };
 
   const sendFileMessage = async (file: File) => {
-    if (!currentUser) return;
+    const storedUser = localStorage.getItem("chatUser");
+    if (!storedUser) return;
+    
     try {
       await chatSocket.sendFile(file);
       
-      // Show uploading toast
+      // Show upload success toast
       toast({
         title: "File uploaded",
         description: `${file.name} has been uploaded successfully.`,
