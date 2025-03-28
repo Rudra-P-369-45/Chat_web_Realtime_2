@@ -73,35 +73,35 @@ export default function Login() {
         </div>
       </div>
       
-      <Card className="relative bg-white/90 backdrop-blur-sm p-8 rounded-xl shadow-2xl max-w-md w-full border border-white/20">
+      <Card className="relative bg-white/90 backdrop-blur-sm p-4 sm:p-8 rounded-xl shadow-2xl w-[90%] max-w-md border border-white/20 mx-4">
         <CardContent className="p-0">
-          <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Rudra Chats</h1>
-            <p className="text-gray-600 mt-2">Connect with friends in real-time</p>
+          <div className="text-center mb-6 sm:mb-8">
+            <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Rudra Chats</h1>
+            <p className="text-gray-600 mt-2 text-sm sm:text-base">Connect with friends in real-time</p>
           </div>
           
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
+          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+            <div className="space-y-1 sm:space-y-2">
+              <Label htmlFor="username" className="text-sm sm:text-base">Username</Label>
               <Input
                 id="username"
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="Enter any username"
-                className="w-full px-4 py-3 bg-white/50 backdrop-blur-sm border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 transition-all duration-200"
+                className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-white/50 backdrop-blur-sm border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 transition-all duration-200 text-sm sm:text-base"
               />
             </div>
             
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+            <div className="space-y-1 sm:space-y-2">
+              <Label htmlFor="password" className="text-sm sm:text-base">Password</Label>
               <Input
                 id="password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter password (hint: 456)"
-                className="w-full px-4 py-3 bg-white/50 backdrop-blur-sm border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 transition-all duration-200"
+                className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-white/50 backdrop-blur-sm border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 transition-all duration-200 text-sm sm:text-base"
               />
               <p className="text-xs text-gray-500 mt-1">Default password is: 456</p>
             </div>
@@ -112,7 +112,7 @@ export default function Login() {
             
             <Button 
               type="submit" 
-              className="w-full py-6 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl"
+              className="w-full py-4 sm:py-6 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl text-sm sm:text-base"
             >
               Login to Chat
             </Button>

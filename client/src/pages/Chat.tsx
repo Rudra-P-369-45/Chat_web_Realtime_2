@@ -125,7 +125,7 @@ export default function Chat() {
           </ScrollArea>
           
           {/* Message input area */}
-          <div className="border-t border-gray-200 bg-white p-3">
+          <div className="border-t border-gray-200 bg-white p-2 sm:p-3">
             <form onSubmit={handleSubmit} className="flex items-end space-x-2">
               <div className="relative flex-1">
                 <Textarea
@@ -133,40 +133,43 @@ export default function Chat() {
                   value={message}
                   onChange={handleMessageChange}
                   placeholder="Type your message..."
-                  className="resize-none border border-gray-300 rounded-lg pl-4 pr-12 py-3 h-12 max-h-32"
+                  className="resize-none border border-gray-300 rounded-lg pl-3 sm:pl-4 pr-10 sm:pr-12 py-2 sm:py-3 text-sm sm:text-base h-10 sm:h-12 max-h-32"
                 />
                 <Button 
                   type="button" 
                   variant="ghost" 
                   size="icon"
-                  className="absolute right-3 bottom-3 text-gray-500 hover:text-primary"
+                  className="absolute right-2 sm:right-3 bottom-2 sm:bottom-3 text-gray-500 hover:text-primary h-6 w-6 sm:h-auto sm:w-auto"
                   onClick={() => fileInputRef.current?.click()}
                 >
-                  <Paperclip className="h-5 w-5" />
+                  <Paperclip className="h-4 w-4 sm:h-5 sm:w-5" />
                 </Button>
                 <input 
                   type="file" 
                   ref={fileInputRef}
                   onChange={handleFileSelect}
                   className="hidden"
+                  accept="image/*,.pdf,.doc,.docx,.txt"
                 />
               </div>
-              <Button type="submit" className="bg-primary text-white">
-                <Send className="h-5 w-5" />
+              <Button type="submit" className="bg-primary text-white h-10 w-10 sm:h-auto sm:w-auto rounded-full sm:rounded-md p-0 sm:p-2 flex items-center justify-center">
+                <Send className="h-4 w-4 sm:h-5 sm:w-5" />
               </Button>
             </form>
             
             {/* File upload preview */}
             {selectedFile && (
-              <FileUploadPreview 
-                file={selectedFile} 
-                onCancel={() => {
-                  setSelectedFile(null);
-                  if (fileInputRef.current) {
-                    fileInputRef.current.value = "";
-                  }
-                }} 
-              />
+              <div className="mt-2">
+                <FileUploadPreview 
+                  file={selectedFile} 
+                  onCancel={() => {
+                    setSelectedFile(null);
+                    if (fileInputRef.current) {
+                      fileInputRef.current.value = "";
+                    }
+                  }} 
+                />
+              </div>
             )}
           </div>
         </div>

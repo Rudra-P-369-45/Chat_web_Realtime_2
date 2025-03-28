@@ -30,14 +30,14 @@ export default function MessageItem({ message, isMine }: MessageItemProps) {
           {getInitials(message.sender)}
         </div>
       )}
-      <div className="max-w-xs md:max-w-md">
+      <div className="max-w-[75%] sm:max-w-xs md:max-w-md">
         <div className={`${
           isMine 
             ? "bg-primary text-white rounded-lg rounded-br-none" 
             : "bg-white rounded-lg rounded-bl-none"
-          } px-4 py-2 shadow-sm`}
+          } px-3 py-2 sm:px-4 shadow-sm break-words`}
         >
-          <p>{message.content}</p>
+          <p className="text-sm sm:text-base">{message.content}</p>
           
           {message.fileUrl && (
             message.fileType?.startsWith("image/") ? (
@@ -45,14 +45,14 @@ export default function MessageItem({ message, isMine }: MessageItemProps) {
                 <img src={message.fileUrl} alt="Uploaded" className="w-full h-auto" />
               </div>
             ) : (
-              <div className="mt-2 bg-white bg-opacity-10 rounded-md p-3 flex items-center space-x-3">
-                <div className="bg-white bg-opacity-20 h-10 w-10 rounded-md flex items-center justify-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="mt-2 bg-white bg-opacity-10 rounded-md p-2 sm:p-3 flex items-center space-x-2 sm:space-x-3">
+                <div className="bg-white bg-opacity-20 h-8 w-8 sm:h-10 sm:w-10 rounded-md flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
                 </div>
-                <div>
-                  <p className="font-medium">{message.fileName}</p>
+                <div className="overflow-hidden">
+                  <p className="font-medium text-sm sm:text-base truncate">{message.fileName}</p>
                   <p className="text-xs text-white text-opacity-70">
                     {message.fileSize} • {message.fileType?.split('/')[1].toUpperCase()}
                   </p>
