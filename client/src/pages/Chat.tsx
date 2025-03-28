@@ -6,8 +6,9 @@ import FileUploadPreview from "../components/FileUploadPreview";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, Paperclip } from "lucide-react";
+import { Send, Paperclip, Trash2 } from "lucide-react";
 import { useChat } from "../context/ChatContext";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Chat() {
   const [message, setMessage] = useState("");
@@ -15,7 +16,8 @@ export default function Chat() {
   const [currentUser, setCurrentUser] = useState<{username: string} | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { messages, users, sendMessage, sendFileMessage } = useChat();
+  const { messages, users, sendMessage, sendFileMessage, clearMessages } = useChat();
+  const { toast } = useToast();
 
   // Get current user from localStorage
   useEffect(() => {
@@ -96,7 +98,21 @@ export default function Chat() {
         
         {/* Chat area */}
         <div className="flex-1 flex flex-col bg-gray-50">
-          {/* Messages container */}
+          {/* Messages container with clear button */}
+          <div className="flex items-center justify-between p-2 border-b border-gray-200 bg-white">
+            <div className="text-sm text-gray-500">
+              {messages.length > 0 ? `${messages.length} messages` : 'No messages'}
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-red-500 hover:text-red-700 hover:bg-red-50 border-red-200"
+              onClick={clearMessages}
+            >
+              <Trash2 className="h-4 w-4 mr-1" />
+              Clear Chat
+            </Button>
+          </div>
           <ScrollArea className="flex-1 p-4" type="always">
             <div className="flex flex-col space-y-4">
               {/* Welcome message */}

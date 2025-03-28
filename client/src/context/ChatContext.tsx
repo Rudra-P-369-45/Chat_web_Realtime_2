@@ -23,6 +23,7 @@ interface ChatContextType {
   users: User[];
   sendMessage: (content: string) => void;
   sendFileMessage: (file: File) => void;
+  clearMessages: () => void;
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -112,8 +113,24 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const clearMessages = () => {
+    // Keep only system messages about users joining/leaving
+    const systemMessages = messages.filter(msg => 
+      msg.sender === "System" && 
+      (msg.content.includes("has joined the chat") || msg.content.includes("has left the chat"))
+    );
+    
+    // Clear all messages except system messages
+    setMessages(systemMessages);
+    
+    toast({
+      title: "Chat cleared",
+      description: "Your chat history has been cleared.",
+    });
+  };
+
   return (
-    <ChatContext.Provider value={{ messages, users, sendMessage, sendFileMessage }}>
+    <ChatContext.Provider value={{ messages, users, sendMessage, sendFileMessage, clearMessages }}>
       {children}
     </ChatContext.Provider>
   );
