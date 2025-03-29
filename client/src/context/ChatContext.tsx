@@ -30,7 +30,8 @@ export interface Message {
 }
 
 export interface User {
-  id: string;
+  id: string;        // Firestore document ID
+  userId: string;    // Firebase Auth UID
   username: string;
   isOnline: boolean;
   lastSeen?: Timestamp;
@@ -97,11 +98,16 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     const unsubscribeUsers = onSnapshot(usersQuery, (snapshot) => {
       const userList: User[] = [];
       snapshot.forEach((doc) => {
-        const data = doc.data() as User;
-        userList.push({
+        const data = doc.data();
+        const userObj: User = {
           id: doc.id,
-          ...data,
-        });
+          userId: data.userId || '',
+          username: data.username || 'Unknown',
+          isOnline: data.isOnline || false,
+          lastSeen: data.lastSeen,
+          photoURL: data.photoURL
+        };
+        userList.push(userObj);
       });
       setUsers(userList);
     });
@@ -127,13 +133,13 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     
     try {
       // Check if user exists in the users collection
-      const userQuery = query(collection(db, "users"), where("id", "==", uid));
+      const userQuery = query(collection(db, "users"), where("userId", "==", uid));
       const userSnapshot = await getDocs(userQuery);
       
       if (userSnapshot.empty && user) {
         // Create user if doesn't exist
         await addDoc(collection(db, "users"), {
-          id: uid,
+          userId: uid, // Changed from id to userId to avoid duplicate property
           username: user.username,
           isOnline: isOnline,
           lastSeen: serverTimestamp(),

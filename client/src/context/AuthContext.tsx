@@ -68,19 +68,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (username: string, password: string) => {
     setIsLoading(true);
     try {
-      const email = createEmailFromUsername(username);
-      
+      // To handle the case where Firebase Authentication is not fully set up yet,
+      // we'll implement a fallback to the previous localStorage approach
       try {
-        // Try to sign in first
-        await signInWithEmailAndPassword(auth, email, password);
-      } catch (error) {
-        // If sign in fails, create a new user
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const email = createEmailFromUsername(username);
         
-        // Update profile with username as displayName
-        await updateProfile(userCredential.user, {
-          displayName: username
-        });
+        try {
+          // Try to sign in first
+          await signInWithEmailAndPassword(auth, email, password);
+        } catch (signInError: any) {
+          // Only create a new user if the error is user-not-found
+          if (signInError.code === 'auth/user-not-found') {
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            
+            // Update profile with username as displayName
+            await updateProfile(userCredential.user, {
+              displayName: username
+            });
+          } else {
+            throw signInError;
+          }
+        }
+      } catch (firebaseError: any) {
+        // If Firebase auth fails with configuration error, use localStorage fallback
+        if (firebaseError.code === 'auth/configuration-not-found' || 
+            firebaseError.code === 'auth/operation-not-allowed') {
+          console.warn("Using localStorage fallback for authentication");
+          
+          // Create user object and store in localStorage as fallback
+          const fallbackUser: User = { 
+            username, 
+            uid: `local-${Date.now()}` 
+          };
+          localStorage.setItem("chatUser", JSON.stringify(fallbackUser));
+          setUser(fallbackUser);
+          return;
+        } else {
+          throw firebaseError;
+        }
       }
     } catch (error) {
       console.error("Authentication error:", error);
@@ -95,8 +120,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Disconnect socket
       chatSocket.disconnect();
       
-      // Sign out from Firebase
-      await signOut(auth);
+      // Clear user from localStorage (for fallback authentication)
+      localStorage.removeItem("chatUser");
+      
+      try {
+        // Sign out from Firebase
+        await signOut(auth);
+      } catch (error) {
+        console.warn("Firebase sign out failed, using fallback", error);
+      }
+      
+      // Ensure user state is cleared even if Firebase signOut fails
+      setUser(null);
     } catch (error) {
       console.error("Logout error:", error);
       throw error;
