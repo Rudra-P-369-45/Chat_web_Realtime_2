@@ -9,7 +9,8 @@ import {
   updateProfile,
   User as FirebaseUser 
 } from "firebase/auth";
-import { auth } from "../lib/firebase";
+import { auth, isUsernameOnline } from "../lib/firebase";
+import { useToast } from "../hooks/use-toast";
 
 interface User {
   username: string;
@@ -31,6 +32,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const { toast } = useToast();
   
   // Listen for auth state changes
   useEffect(() => {
@@ -68,6 +70,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (username: string, password: string) => {
     setIsLoading(true);
     try {
+      // First check if the username is already in use by an online user
+      const usernameInUse = await isUsernameOnline(username);
+      
+      if (usernameInUse) {
+        toast({
+          title: "Username already in use",
+          description: "This username is currently being used by another online user. Please try a different username.",
+          variant: "destructive",
+        });
+        throw new Error("Username already in use");
+      }
+      
       // To handle the case where Firebase Authentication is not fully set up yet,
       // we'll implement a fallback to the previous localStorage approach
       try {

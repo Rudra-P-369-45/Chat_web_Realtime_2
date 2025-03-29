@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { getFirestore, collection, query, where, getDocs } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
 // Your web app's Firebase configuration
@@ -20,5 +20,28 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
+
+/**
+ * Check if a username is already being used by an online user
+ * @param username The username to check
+ * @returns True if the username is already in use by an online user, false otherwise
+ */
+export async function isUsernameOnline(username: string): Promise<boolean> {
+  try {
+    // Query Firestore for users with this username who are online
+    const usersRef = collection(db, "users");
+    const q = query(
+      usersRef,
+      where("username", "==", username),
+      where("isOnline", "==", true)
+    );
+    
+    const snapshot = await getDocs(q);
+    return !snapshot.empty; // Return true if we found any online users with this username
+  } catch (error) {
+    console.error("Error checking if username is online:", error);
+    return false; // Default to allowing login if there's an error
+  }
+}
 
 export default app;

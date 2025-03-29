@@ -50,15 +50,23 @@ export default function Login() {
       
       // Redirect to chat page using wouter's navigation
       setLocation("/");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Login error:", error);
-      setError("Login failed. Please try again.");
       
-      toast({
-        title: "Login failed",
-        description: "Please check your credentials and try again.",
-        variant: "destructive"
-      });
+      // Check if this is the specific username in use error
+      if (error.message === "Username already in use") {
+        setError("This username is already in use by another online user. Please try a different username.");
+        
+        // Toast is already displayed in the AuthContext
+      } else {
+        setError("Login failed. Please try again.");
+        
+        toast({
+          title: "Login failed",
+          description: "Please check your credentials and try again.",
+          variant: "destructive"
+        });
+      }
     } finally {
       setIsLoggingIn(false);
     }
@@ -103,7 +111,13 @@ export default function Login() {
                 id="username"
                 type="text"
                 value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                onChange={(e) => {
+                  setUsername(e.target.value);
+                  // Clear error when username changes, especially if it was a "username in use" error
+                  if (error.includes("username is already in use")) {
+                    setError("");
+                  }
+                }}
                 placeholder="Enter any username"
                 className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-white/50 backdrop-blur-sm border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 transition-all duration-200 text-sm sm:text-base"
               />
