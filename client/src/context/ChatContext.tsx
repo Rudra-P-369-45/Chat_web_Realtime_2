@@ -1,11 +1,28 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { chatSocket } from "../lib/socket";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "./AuthContext";
+import { db, storage } from "../lib/firebase";
+import { 
+  collection, 
+  addDoc, 
+  onSnapshot, 
+  query, 
+  orderBy, 
+  serverTimestamp,
+  Timestamp, 
+  getDocs,
+  where,
+  updateDoc,
+  doc
+} from "firebase/firestore";
+import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 
 export interface Message {
+  id?: string;
   content: string;
   sender: string;
-  timestamp: string;
+  senderUid?: string;
+  timestamp: string | Timestamp;
   fileUrl?: string;
   fileName?: string;
   fileSize?: string;
@@ -13,17 +30,20 @@ export interface Message {
 }
 
 export interface User {
-  id: string | number;
+  id: string;
   username: string;
   isOnline: boolean;
+  lastSeen?: Timestamp;
+  photoURL?: string;
 }
 
 interface ChatContextType {
   messages: Message[];
   users: User[];
-  sendMessage: (content: string) => void;
-  sendFileMessage: (file: File) => void;
+  sendMessage: (content: string) => Promise<void>;
+  sendFileMessage: (file: File) => Promise<void>;
   clearMessages: () => void;
+  isLoading: boolean;
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -38,71 +58,177 @@ const formatFileSize = (bytes: number) => {
 export function ChatProvider({ children }: { children: ReactNode }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [users, setUsers] = useState<User[]>([]);
-  const [isConnected, setIsConnected] = useState(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const { toast } = useToast();
+  const { user } = useAuth();
 
-  // Initialize chat connection
+  // Listen for messages from Firestore
   useEffect(() => {
-    // Get current user from localStorage
-    const storedUser = localStorage.getItem("chatUser");
-    if (!storedUser) return;
+    if (!user) return;
+
+    setIsLoading(true);
     
-    const parsedUser = JSON.parse(storedUser);
+    // Set the current user as online
+    updateUserStatus(user.uid, true);
     
-    // Connect socket with saved username
-    console.log("Connecting to chat as:", parsedUser.username);
-    chatSocket.connect(parsedUser.username);
-    setIsConnected(true);
+    // Query messages
+    const messagesQuery = query(
+      collection(db, "messages"),
+      orderBy("timestamp", "asc")
+    );
+
+    // Subscribe to messages
+    const unsubscribeMessages = onSnapshot(messagesQuery, (snapshot) => {
+      const messageList: Message[] = [];
+      snapshot.forEach((doc) => {
+        const data = doc.data() as Message;
+        messageList.push({
+          id: doc.id,
+          ...data,
+          timestamp: data.timestamp as Timestamp,
+        });
+      });
+      setMessages(messageList);
+      setIsLoading(false);
+    });
+
+    // Subscribe to users online status
+    const usersQuery = query(collection(db, "users"));
+    const unsubscribeUsers = onSnapshot(usersQuery, (snapshot) => {
+      const userList: User[] = [];
+      snapshot.forEach((doc) => {
+        const data = doc.data() as User;
+        userList.push({
+          id: doc.id,
+          ...data,
+        });
+      });
+      setUsers(userList);
+    });
+
+    // Set up beforeunload event to mark user as offline when leaving
+    const handleBeforeUnload = () => {
+      updateUserStatus(user.uid, false);
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    // Cleanup function
+    return () => {
+      unsubscribeMessages();
+      unsubscribeUsers();
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      updateUserStatus(user.uid, false);
+    };
+  }, [user]);
+
+  // Update user online status
+  const updateUserStatus = async (uid: string, isOnline: boolean) => {
+    if (!uid) return;
     
-    // Register message handlers
-    const removeMessageHandler = chatSocket.onMessage((message: Message) => {
-      console.log("Received message:", message);
-      setMessages(prevMessages => [...prevMessages, message]);
+    try {
+      // Check if user exists in the users collection
+      const userQuery = query(collection(db, "users"), where("id", "==", uid));
+      const userSnapshot = await getDocs(userQuery);
       
-      // Show toast for new messages from others
-      if (message.sender !== parsedUser.username) {
-        toast({
-          title: `New message from ${message.sender}`,
-          description: message.content.substring(0, 30) + (message.content.length > 30 ? '...' : ''),
+      if (userSnapshot.empty && user) {
+        // Create user if doesn't exist
+        await addDoc(collection(db, "users"), {
+          id: uid,
+          username: user.username,
+          isOnline: isOnline,
+          lastSeen: serverTimestamp(),
+          photoURL: user.photoURL,
+        });
+      } else {
+        // Update existing user
+        userSnapshot.forEach(async (document) => {
+          await updateDoc(doc(db, "users", document.id), {
+            isOnline: isOnline,
+            lastSeen: serverTimestamp(),
+          });
         });
       }
-    });
-    
-    const removeUsersHandler = chatSocket.onUsersUpdate((updatedUsers: User[]) => {
-      console.log("Users updated:", updatedUsers);
-      setUsers(updatedUsers);
-    });
-    
-    // Cleanup on unmount
-    return () => {
-      removeMessageHandler();
-      removeUsersHandler();
-      chatSocket.disconnect();
-      setIsConnected(false);
-    };
-  }, [toast]);
+    } catch (error) {
+      console.error("Error updating user status:", error);
+    }
+  };
 
-  const sendMessage = (content: string) => {
-    if (!content.trim()) return;
+  const sendMessage = async (content: string) => {
+    if (!content.trim() || !user) return;
     
-    const storedUser = localStorage.getItem("chatUser");
-    if (!storedUser) return;
-    
-    chatSocket.sendMessage(content);
+    try {
+      await addDoc(collection(db, "messages"), {
+        content: content,
+        sender: user.username,
+        senderUid: user.uid,
+        timestamp: serverTimestamp(),
+      });
+    } catch (error) {
+      console.error("Error sending message:", error);
+      toast({
+        title: "Failed to send message",
+        description: "Please try again later.",
+        variant: "destructive",
+      });
+    }
   };
 
   const sendFileMessage = async (file: File) => {
-    const storedUser = localStorage.getItem("chatUser");
-    if (!storedUser) return;
+    if (!file || !user) return;
     
     try {
-      await chatSocket.sendFile(file);
+      // Create storage reference
+      const storageRef = ref(storage, `chat-files/${Date.now()}_${file.name}`);
       
-      // Show upload success toast
-      toast({
-        title: "File uploaded",
-        description: `${file.name} has been uploaded successfully.`,
+      // Upload file to Firebase Storage
+      const uploadTask = uploadBytesResumable(storageRef, file);
+      
+      // Show uploading toast
+      const uploadingToast = toast({
+        title: "Uploading file...",
+        description: "Please wait while your file is being uploaded.",
       });
+      
+      // Listen for upload progress
+      uploadTask.on(
+        'state_changed', 
+        (snapshot) => {
+          // Handle progress updates if needed
+          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          console.log(`Upload is ${progress}% done`);
+        },
+        (error) => {
+          // Handle error
+          console.error("Error uploading file:", error);
+          toast({
+            title: "Upload failed",
+            description: "There was an error uploading your file.",
+            variant: "destructive",
+          });
+        },
+        async () => {
+          // Upload completed successfully, get download URL
+          const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+          
+          // Add message with file info to Firestore
+          await addDoc(collection(db, "messages"), {
+            content: `Sent a file: ${file.name}`,
+            sender: user.username,
+            senderUid: user.uid,
+            timestamp: serverTimestamp(),
+            fileUrl: downloadURL,
+            fileName: file.name,
+            fileSize: formatFileSize(file.size),
+            fileType: file.type,
+          });
+          
+          // Close the uploading toast and show success toast
+          toast({
+            title: "File uploaded",
+            description: `${file.name} has been uploaded successfully.`,
+          });
+        }
+      );
     } catch (error) {
       console.error("Error sending file:", error);
       toast({
@@ -114,23 +240,30 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   };
 
   const clearMessages = () => {
-    // Keep only system messages about users joining/leaving
+    // Filter out system messages
     const systemMessages = messages.filter(msg => 
       msg.sender === "System" && 
       (msg.content.includes("has joined the chat") || msg.content.includes("has left the chat"))
     );
     
-    // Clear all messages except system messages
+    // Update the UI immediately
     setMessages(systemMessages);
     
     toast({
       title: "Chat cleared",
-      description: "Your chat history has been cleared.",
+      description: "Your chat history has been cleared locally.",
     });
   };
 
   return (
-    <ChatContext.Provider value={{ messages, users, sendMessage, sendFileMessage, clearMessages }}>
+    <ChatContext.Provider value={{ 
+      messages, 
+      users, 
+      sendMessage, 
+      sendFileMessage, 
+      clearMessages,
+      isLoading
+    }}>
       {children}
     </ChatContext.Provider>
   );

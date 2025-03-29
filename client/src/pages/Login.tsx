@@ -1,6 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useLocation } from "wouter";
-import { chatSocket } from "../lib/socket";
 import { 
   Card, 
   CardContent 
@@ -9,43 +8,60 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "../context/AuthContext";
+import { Loader2 } from "lucide-react";
 
 export default function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [_, setLocation] = useLocation();
   const { toast } = useToast();
+  const { login } = useAuth();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
     
     if (!username.trim()) {
       setError("Username is required");
       return;
     }
     
+    // Use the fixed password for all users
+    // Note: In a real application, each user would have their own password
     if (password !== "456") {
       setError("Invalid password");
       return;
     }
     
-    // Create user object and store in localStorage
-    const user = { username };
-    localStorage.setItem("chatUser", JSON.stringify(user));
-    
-    // Show toast notification
-    toast({
-      title: "Login successful",
-      description: `Welcome ${username}!`,
-    });
-    
-    // Redirect to chat page using wouter's navigation
-    // This will trigger App's useEffect that checks localStorage
-    setLocation("/");
-    
-    // Force a refresh of the page to ensure all state is updated
-    window.location.reload();
+    try {
+      setIsLoggingIn(true);
+      
+      // Login with Firebase
+      await login(username, password);
+      
+      // Show toast notification
+      toast({
+        title: "Login successful",
+        description: `Welcome ${username}!`,
+      });
+      
+      // Redirect to chat page using wouter's navigation
+      setLocation("/");
+    } catch (error) {
+      console.error("Login error:", error);
+      setError("Login failed. Please try again.");
+      
+      toast({
+        title: "Login failed",
+        description: "Please check your credentials and try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoggingIn(false);
+    }
   };
 
   return (
@@ -110,10 +126,18 @@ export default function Login() {
             )}
             
             <Button 
-              type="submit" 
+              type="submit"
+              disabled={isLoggingIn}
               className="w-full py-4 sm:py-6 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl text-sm sm:text-base"
             >
-              Login to Chat
+              {isLoggingIn ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Logging in...
+                </>
+              ) : (
+                'Login to Chat'
+              )}
             </Button>
           </form>
         </CardContent>
